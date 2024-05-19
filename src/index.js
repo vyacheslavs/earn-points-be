@@ -1,6 +1,5 @@
 const express = require('express');
 var fs = require("fs");
-var points = require("./points.json")
 const { createHash } = require('crypto');
 const cors = require('cors');
 const { request } = require('http');
@@ -15,6 +14,10 @@ app.use(express.static(__dirname + WWWDIR));
 
 const PORT = process.env.PORT || 3001;
 const X_FORWARD_EMAIL = process.env.X_FORWARD_EMAIL || "sample@domain.com";
+const POINTS_FILE_PATH = process.env.POINTS_FILE_PATH || "./";
+const POINTS_FILE = POINTS_FILE_PATH + "points.json";
+
+var points = require(POINTS_FILE);
 
 const userId = (req) => {
     if (!(X_FORWARD_EMAIL in req))
@@ -102,7 +105,7 @@ app.post('/spend', function(request, response) {
     // register history
     let his = {"name": request.body.name, "amount": -request.body.amount, "date": (new Date()).toJSON(), "total": points[userId(request)].total_points};
     points[userId(request)].history.unshift(his);
-    fs.writeFileSync('./points.json', JSON.stringify(points));
+    fs.writeFileSync(POINTS_FILE, JSON.stringify(points));
 
     let resp = {"total_points": points[userId(request)].total_points, "history": points[userId(request)].history, "success": true};
     response.send(resp);
@@ -160,7 +163,7 @@ app.post('/addpoints', function(request, response) {
     }
 
     points[userId(request)].history.unshift(his);
-    fs.writeFileSync('./points.json', JSON.stringify(points));
+    fs.writeFileSync(POINTS_FILE, JSON.stringify(points));
 
     let resp = {"total_points": points[userId(request)].total_points, "history": points[userId(request)].history, "success": true};
     if (limit_hash) {

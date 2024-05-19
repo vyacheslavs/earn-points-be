@@ -1,1 +1,7 @@
-{"total_points":0,"limit_hits": {},"history":[]}
+{"sample@domain.com": 
+    {
+        "total_points":0,
+        "limit_hits": {},
+        "history":[]
+    }
+}
