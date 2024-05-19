@@ -17,7 +17,15 @@ const X_FORWARD_EMAIL = process.env.X_FORWARD_EMAIL || "sample@domain.com";
 const POINTS_FILE_PATH = process.env.POINTS_FILE_PATH || "./";
 const POINTS_FILE = POINTS_FILE_PATH + "points.json";
 
-var points = require(POINTS_FILE);
+var points_str;
+
+try {
+    points_str = fs.readFileSync(POINTS_FILE);
+} catch (error) {
+    points_str = '{"sample@domain.com":{"total_points":0,"limit_hits": {},"history":[]}}';
+}
+var points = JSON.parse(points_str);
+
 
 const userId = (req) => {
     if (!(X_FORWARD_EMAIL in req))
