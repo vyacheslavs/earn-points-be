@@ -40,7 +40,7 @@ app.listen(PORT, () => {
   console.log("Server Listening on PORT:", PORT);
 });
 
-app.use('/', function(req, res){
+app.get('/', function(req, res){
     res.sendFile(__dirname + WWWDIR +'/index.html');
   });
   
