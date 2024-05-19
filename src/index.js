@@ -9,6 +9,10 @@ const app = express ();
 app.use(express.json());
 app.use(cors());
 
+const WWWDIR = process.env.WWWDIR || "/www";
+
+app.use(express.static(__dirname + WWWDIR));
+
 const PORT = process.env.PORT || 3001;
 const X_FORWARD_EMAIL = process.env.X_FORWARD_EMAIL || "sample@domain.com";
 
@@ -35,6 +39,11 @@ const userId = (req) => {
 app.listen(PORT, () => {
   console.log("Server Listening on PORT:", PORT);
 });
+
+app.use('/', function(req, res){
+    res.sendFile(__dirname + WWWDIR +'/index.html');
+  });
+  
 
 app.get("/status", (request, response) => {
   const status = {
