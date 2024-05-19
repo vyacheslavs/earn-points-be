@@ -45,6 +45,40 @@ app.get('/limithits/:limit_hash', (request, response) => {
     response.send(status);
 });
 
+app.post('/spend', function(request, response) {
+    let status_fail = {
+        "success": false
+    };
+
+    if (!request.body.amount) {
+        status_fail = {... status_fail, ... {"error": "API error: no amount field", "code": 4}}
+        response.send(status_fail);
+        return;
+    }
+
+    if (!request.body.name) {
+        status_fail = {... status_fail, ... {"error": "API error: no name field", "code": 5}}
+        response.send(status_fail);
+        return;
+    }
+
+    if ( points.total_points < request.body.amount ) {
+        status_fail = {... status_fail, ... {"error": "Not enough points to spend", "code": 6}}
+        response.send(status_fail);
+        return;
+    }
+    // register spend
+    points.total_points -= request.body.amount;
+    // register history
+    let his = {"name": request.body.name, "amount": -request.body.amount, "date": (new Date()).toJSON(), "total": points.total_points};
+    points.history.unshift(his);
+    fs.writeFileSync('./points.json', JSON.stringify(points));
+
+    let resp = {"total_points": points.total_points, "history": points.history, "success": true};
+    response.send(resp);
+
+});
+
 app.post('/addpoints', function(request, response) {
     // request.body format
     // { "amount": N, "name": "Activity Name", "limits": {}}
