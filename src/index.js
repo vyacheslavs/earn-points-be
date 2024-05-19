@@ -10,6 +10,27 @@ app.use(express.json());
 app.use(cors());
 
 const PORT = process.env.PORT || 3001;
+const X_FORWARD_EMAIL = process.env.X_FORWARD_EMAIL || "sample@domain.com";
+
+const userId = (req) => {
+    if (!(X_FORWARD_EMAIL in req))
+        return "sample@domain.com";
+
+    let userid = req[X_FORWARD_EMAIL];
+
+    if (userid == null || userId.length === 0)
+        userid = "sample@domain.com";
+
+    if (!(userid in points)) {
+        points[userid] = {
+            "total_points":0,
+            "limit_hits": {},
+            "history":[]
+        };    
+    }
+    
+    return userid;
+};
 
 app.listen(PORT, () => {
   console.log("Server Listening on PORT:", PORT);
@@ -26,7 +47,7 @@ app.get("/status", (request, response) => {
 app.get('/history', (request, response) => {
     var status = {"success": true};
 
-    status = { ... status, ... {"history": points.history, "total_points": points.total_points}};
+    status = { ... status, ... {"history": points[userId(request)].history, "total_points": points[userId(request)].total_points}};
     response.send(status);
 });
 
@@ -36,8 +57,8 @@ app.get('/limithits/:limit_hash', (request, response) => {
 
     var status = {"success": true};
 
-    if (limit_hash in points.limit_hits) {
-        status = { ... status, ...{"hits": points.limit_hits[limit_hash]}};
+    if (limit_hash in points[userId(request)].limit_hits) {
+        status = { ... status, ...{"hits": points[userId(request)].limit_hits[limit_hash]}};
     } else {
         status = { ... status, ...{"hits": 0}};
     }
@@ -62,19 +83,19 @@ app.post('/spend', function(request, response) {
         return;
     }
 
-    if ( points.total_points < request.body.amount ) {
+    if ( points[userId(request)].total_points < request.body.amount ) {
         status_fail = {... status_fail, ... {"error": "Not enough points to spend", "code": 6}}
         response.send(status_fail);
         return;
     }
     // register spend
-    points.total_points -= request.body.amount;
+    points[userId(request)].total_points -= request.body.amount;
     // register history
-    let his = {"name": request.body.name, "amount": -request.body.amount, "date": (new Date()).toJSON(), "total": points.total_points};
-    points.history.unshift(his);
+    let his = {"name": request.body.name, "amount": -request.body.amount, "date": (new Date()).toJSON(), "total": points[userId(request)].total_points};
+    points[userId(request)].history.unshift(his);
     fs.writeFileSync('./points.json', JSON.stringify(points));
 
-    let resp = {"total_points": points.total_points, "history": points.history, "success": true};
+    let resp = {"total_points": points[userId(request)].total_points, "history": points[userId(request)].history, "success": true};
     response.send(resp);
 
 });
@@ -109,32 +130,32 @@ app.post('/addpoints', function(request, response) {
         limit_hash = createHash('sha256').update(JSON.stringify(limit_val)).digest('hex');
     }
 
-    if (limit_hash && (limit_hash in points.limit_hits) && request.body.limits.limit && points.limit_hits[limit_hash] >= request.body.limits.limit) {
+    if (limit_hash && (limit_hash in points[userId(request)].limit_hits) && request.body.limits.limit && points[userId(request)].limit_hits[limit_hash] >= request.body.limits.limit) {
         status_fail = {... status_fail, ... {"error": "limit exceeded", "code":3}}
         response.send(status_fail);
         return;
     }
 
-    points.total_points += request.body.amount;
-    let his = {"name": request.body.name, "amount": request.body.amount, "date": (new Date()).toJSON(), "total": points.total_points};
+    points[userId(request)].total_points += request.body.amount;
+    let his = {"name": request.body.name, "amount": request.body.amount, "date": (new Date()).toJSON(), "total": points[userId(request)].total_points};
     if (limit_hash) {
         his = {... his, ...{"limit_hash":limit_hash}};
     }
 
     if (limit_hash) {
-        if (!(limit_hash in points.limit_hits)) {
-            points.limit_hits[limit_hash] = 1;
+        if (!(limit_hash in points[userId(request)].limit_hits)) {
+            points[userId(request)].limit_hits[limit_hash] = 1;
         } else {
-            points.limit_hits[limit_hash] += 1;
+            points[userId(request)].limit_hits[limit_hash] += 1;
         }
     }
 
-    points.history.unshift(his);
+    points[userId(request)].history.unshift(his);
     fs.writeFileSync('./points.json', JSON.stringify(points));
 
-    let resp = {"total_points": points.total_points, "history": points.history, "success": true};
+    let resp = {"total_points": points[userId(request)].total_points, "history": points[userId(request)].history, "success": true};
     if (limit_hash) {
-        resp = {... resp, ...{"limit_hit": points.limit_hits[limit_hash], "limit_hash": limit_hash}};
+        resp = {... resp, ...{"limit_hit": points[userId(request)].limit_hits[limit_hash], "limit_hash": limit_hash}};
     }
 
     response.send(resp);
