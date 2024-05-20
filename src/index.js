@@ -13,7 +13,7 @@ const WWWDIR = process.env.WWWDIR || "/www";
 app.use(express.static(__dirname + WWWDIR));
 
 const PORT = process.env.PORT || 3001;
-const X_FORWARD_EMAIL = process.env.X_FORWARD_EMAIL || "sample@domain.com";
+const X_FORWARD_EMAIL = process.env.X_FORWARD_EMAIL || "x-forwarded-user";
 const POINTS_FILE_PATH = process.env.POINTS_FILE_PATH || "./";
 const POINTS_FILE = POINTS_FILE_PATH + "points.json";
 
@@ -26,12 +26,11 @@ try {
 }
 var points = JSON.parse(points_str);
 
-
 const userId = (req) => {
-    if (!(X_FORWARD_EMAIL in req))
+    if (!(X_FORWARD_EMAIL in req.headers))
         return "sample@domain.com";
 
-    let userid = req[X_FORWARD_EMAIL];
+    let userid = req.headers[X_FORWARD_EMAIL];
 
     if (userid == null || userId.length === 0)
         userid = "sample@domain.com";
@@ -41,9 +40,9 @@ const userId = (req) => {
             "total_points":0,
             "limit_hits": {},
             "history":[]
-        };    
+        };
     }
-    
+
     return userid;
 };
 
@@ -51,7 +50,7 @@ app.listen(PORT, () => {
   console.log("Server Listening on PORT:", PORT);
 });
 
-app.get('/', function(req, res){
+app.get('/', function(req, res) {
     res.sendFile(__dirname + WWWDIR +'/index.html');
   });
   
