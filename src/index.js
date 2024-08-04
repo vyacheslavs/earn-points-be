@@ -145,7 +145,7 @@ app.post('/addpoints', function(request, response) {
 
     let limit_hash = "";
     if (request.body.limits) {
-        const limit_val = {"limits": request.body.limits,  "day": new Date().toISOString().slice(0, 10), "name": request.body.name};
+        const limit_val = {"limits": request.body.limits,  "day": new Date().toLocaleDateString(), "name": request.body.name};
         limit_hash = createHash('sha256').update(JSON.stringify(limit_val)).digest('hex');
     }
 
